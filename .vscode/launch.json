@@ -1,0 +1,71 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'eightdo'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=eightdo",
+                    "--manifest-path",
+                    "eightdo/Cargo.toml"
+                ],
+                "filter": {
+                    "name": "eightdo",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/eightdo"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'eightdo'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=eightdo",
+                    "--package=eightdo",
+                    "--manifest-path",
+                    "eightdo/Cargo.toml"
+                ],
+                "filter": {
+                    "name": "eightdo",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/eightdo"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'eightdo'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=eightdo",
+                    "--package=eightdo",
+                    "--manifest-path",
+                    "eightdo/Cargo.toml"
+                ],
+                "filter": {
+                    "name": "eightdo",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}/eightdo"
+        }
+    ]
+}

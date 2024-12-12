@@ -1,0 +1,9 @@
+[package]
+name = "eightdo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitflags = "2.6.0"
+proc-bitfield = "0.5.0"
+console = { version = "0.15.8", default-features = false }

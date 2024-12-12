@@ -1,0 +1,32 @@
+{
+	"Instruction": {
+		"scope": "rust",
+		"prefix": "inst",
+		"body": [
+			"use crate::cpu::{AddressingMode, Flag, Pins, ReadWrite::{Read, Write}, CPU};",
+			"",
+			"impl CPU {",
+			"\tpub fn $1(&mut self, pins: &mut Pins, mode: AddressingMode) {",
+			"\t\t$0",
+			"\t}",
+			"}",
+		],
+		"description": "8do Instruction",
+		"isFileTemplate": true
+	},
+	"InstructionNoMode": {
+		"scope": "rust",
+		"prefix": "instnm",
+		"body": [
+			"use crate::cpu::{AddressingMode, Flag, Pins, ReadWrite::{Read, Write}, CPU};",
+			"",
+			"impl CPU {",
+			"\tpub fn $1(&mut self, pins: &mut Pins) {",
+			"\t\t$0",
+			"\t}",
+			"}",
+		],
+		"description": "8do Instruction No Mode",
+		"isFileTemplate": true
+	}
+}

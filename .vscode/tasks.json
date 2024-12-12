@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "rust: cargo run eightdo",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run", "--manifest-path", "eightdo/Cargo.toml"],
+            "group": {
+                "kind": "build",
+            }
+        },
+        {
+            "label": "rust: cargo run assembler",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run", "--manifest-path", "assembler/Cargo.toml"],
+            "group": {
+                "kind": "build",
+            }
+        },
+        {
+            "label": "rust: cargo fmt eightdo",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["fmt", "--manifest-path", "eightdo/Cargo.toml"],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "rust: cargo fmt assembler",
+            "type": "shell",
+            "command": "cargo",
+            "args": ["fmt", "--manifest-path", "assembler/Cargo.toml"],
+            "group": {
+                "kind": "build"
+            }
+        }
+    ]
+}
