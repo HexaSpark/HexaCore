@@ -104,6 +104,23 @@ impl CPU {
                 pins.data = self.pc.get_extended_value();
                 pins.rw = Write;
             },
+            5 => {
+                self.sp.increment();
+                pins.address = self.sp.into();
+                pins.data = self.pc.get_hi_byte();
+                pins.rw = Write;
+            },
+            6 => {
+                self.sp.increment();
+                pins.address = self.sp.into();
+                pins.data = self.pc.get_low_byte();
+                pins.rw = Write;
+            },
+            7 => {
+                self.sp.increment();
+                self.pc = self.temp_addr;
+                self.finish(pins);
+            }
             _ => panic!("JSR tried to execute non-existent cycle {}", self.cycle),
         }
     }
