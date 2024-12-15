@@ -1,8 +1,4 @@
-use crate::cpu::{
-    AddressingMode, Flag, Pins,
-    ReadWrite::{Read, Write},
-    CPU,
-};
+use crate::cpu::{AddressingMode, Flag, Pins, ReadWrite::Read, CPU};
 
 impl CPU {
     pub fn MOV(&mut self, pins: &mut Pins, mode: AddressingMode) {

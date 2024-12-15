@@ -4,14 +4,23 @@ pub use self::consts::*;
 
 mod add;
 mod and;
+mod cmp;
+mod dec;
 mod hlt;
+mod inc;
 mod mov;
 mod or;
 mod pop;
 mod psh;
 mod st;
-mod xor;
 mod sub;
+mod xor;
+mod sbl;
+mod sbr;
+mod rol;
+mod ror;
+mod flags;
+mod jumps;
 
 mod consts {
     pub const MOVI: u8 = gen_opcode("MOVI");
@@ -37,6 +46,26 @@ mod consts {
     pub const SUBI: u8 = gen_opcode("SUBI ");
     pub const SUBR: u8 = gen_opcode("SUBR");
     pub const SUBA: u8 = gen_opcode("SUBA");
+    pub const CMPI: u8 = gen_opcode("CMPI");
+    pub const CMPR: u8 = gen_opcode("CMPR");
+    pub const CMPA: u8 = gen_opcode("CMPA");
+    pub const INCR: u8 = gen_opcode("INCR");
+    pub const INCA: u8 = gen_opcode("INCA  ");
+    pub const DECR: u8 = gen_opcode("DECR");
+    pub const DECA: u8 = gen_opcode("DECA");
+    pub const SBLR: u8 = gen_opcode("SBLR  ");
+    pub const SBLA: u8 = gen_opcode("SBLA");
+    pub const SBRR: u8 = gen_opcode("SBRR");
+    pub const SBRA: u8 = gen_opcode("SBRA");
+    pub const ROLR: u8 = gen_opcode("ROLR");
+    pub const ROLA: u8 = gen_opcode("ROLA");
+    pub const RORR: u8 = gen_opcode("RORR");
+    pub const RORA: u8 = gen_opcode("RORA ");
+    pub const CLC: u8 = gen_opcode("CLC");
+    pub const CLI: u8 = gen_opcode("CLI");
+    pub const CLV: u8 = gen_opcode("CLV");
+    pub const SEI: u8 = gen_opcode("SEI");
+    pub const JMP: u8 = gen_opcode("JMP");
 
     const fn gen_opcode(opcode: &str) -> u8 {
         let mut res: u8 = 0;

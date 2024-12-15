@@ -1,8 +1,4 @@
-use crate::cpu::{
-    AddressingMode, Flag, Pins,
-    ReadWrite::{Read, Write},
-    CPU,
-};
+use crate::cpu::{AddressingMode, Flag, Pins, ReadWrite::Read, CPU};
 
 impl CPU {
     pub fn SUB(&mut self, pins: &mut Pins, mode: AddressingMode) {
@@ -15,15 +11,12 @@ impl CPU {
                 2 => {
                     let val = *self.decode_register(self.instruction.metadata.reg0());
                     let data = (pins.data as u16) ^ 0x00FF;
-                    self.temp16 =
-                        val as u16 + data + self.flags.contains(Flag::C) as u16;
+                    self.temp16 = val as u16 + data + self.flags.contains(Flag::C) as u16;
 
                     self.flags.set(Flag::C, self.temp16 > 0xFF);
                     self.flags.set(
                         Flag::O,
-                        ((!((val as u16) ^ data) & ((val as u16) ^ self.temp16))
-                            & 0x8000)
-                            > 0,
+                        ((!((val as u16) ^ data) & ((val as u16) ^ self.temp16)) & 0x8000) > 0,
                     );
                     self.set_flag(Flag::Z, self.temp16 as u8, None);
                     self.set_flag(Flag::N, self.temp16 as u8, None);
@@ -37,16 +30,14 @@ impl CPU {
             },
             AddressingMode::Register => {
                 let val1 = *self.decode_register(self.instruction.metadata.reg0());
-                let val2 = (*self.decode_register(self.instruction.metadata.reg1()) as u16) ^ 0x00FF;
-                    self.temp16 =
-                        val1 as u16 + val2 + self.flags.contains(Flag::C) as u16;
+                let val2 =
+                    (*self.decode_register(self.instruction.metadata.reg1()) as u16) ^ 0x00FF;
+                self.temp16 = val1 as u16 + val2 + self.flags.contains(Flag::C) as u16;
 
                 self.flags.set(Flag::C, self.temp16 > 0xFF);
                 self.flags.set(
                     Flag::O,
-                    ((!((val1 as u16) ^ val2) & ((val1 as u16) ^ self.temp16))
-                        & 0x8000)
-                        > 0,
+                    ((!((val1 as u16) ^ val2) & ((val1 as u16) ^ self.temp16)) & 0x8000) > 0,
                 );
                 self.set_flag(Flag::Z, self.temp16 as u8, None);
                 self.set_flag(Flag::N, self.temp16 as u8, None);
@@ -82,15 +73,12 @@ impl CPU {
                 4 => {
                     let val = *self.decode_register(self.instruction.metadata.reg0());
                     let data = (pins.data as u16) ^ 0x00FF;
-                    self.temp16 =
-                        val as u16 + data + self.flags.contains(Flag::C) as u16;
+                    self.temp16 = val as u16 + data + self.flags.contains(Flag::C) as u16;
 
                     self.flags.set(Flag::C, self.temp16 > 0xFF);
                     self.flags.set(
                         Flag::O,
-                        ((!((val as u16) ^ data) & ((val as u16) ^ self.temp16))
-                            & 0x8000)
-                            > 0,
+                        ((!((val as u16) ^ data) & ((val as u16) ^ self.temp16)) & 0x8000) > 0,
                     );
                     self.set_flag(Flag::Z, self.temp16 as u8, None);
                     self.set_flag(Flag::N, self.temp16 as u8, None);
@@ -99,9 +87,9 @@ impl CPU {
 
                     self.pc.increment();
                     self.finish(pins);
-                },
+                }
                 _ => panic!("ADD(A) tried to execute non-existent cycle {}", self.cycle),
-            }
+            },
         }
     }
 }

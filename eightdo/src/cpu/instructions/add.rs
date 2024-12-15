@@ -1,8 +1,4 @@
-use crate::cpu::{
-    AddressingMode, Flag, Pins,
-    ReadWrite::{Read, Write},
-    CPU,
-};
+use crate::cpu::{AddressingMode, Flag, Pins, ReadWrite::Read, CPU};
 
 impl CPU {
     pub fn ADD(&mut self, pins: &mut Pins, mode: AddressingMode) {
@@ -37,14 +33,12 @@ impl CPU {
             AddressingMode::Register => {
                 let val1 = *self.decode_register(self.instruction.metadata.reg0());
                 let val2 = *self.decode_register(self.instruction.metadata.reg1());
-                self.temp16 =
-                    val1 as u16 + val2 as u16 + self.flags.contains(Flag::C) as u16;
+                self.temp16 = val1 as u16 + val2 as u16 + self.flags.contains(Flag::C) as u16;
 
                 self.flags.set(Flag::C, self.temp16 > 0xFF);
                 self.flags.set(
                     Flag::O,
-                    ((!((val1 as u16) ^ (val2 as u16)) & ((val1 as u16) ^ self.temp16))
-                        & 0x8000)
+                    ((!((val1 as u16) ^ (val2 as u16)) & ((val1 as u16) ^ self.temp16)) & 0x8000)
                         > 0,
                 );
                 self.set_flag(Flag::Z, self.temp16 as u8, None);
@@ -97,9 +91,9 @@ impl CPU {
 
                     self.pc.increment();
                     self.finish(pins);
-                },
+                }
                 _ => panic!("ADD(A) tried to execute non-existent cycle {}", self.cycle),
-            }
+            },
         }
     }
 }

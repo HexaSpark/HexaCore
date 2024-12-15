@@ -1,8 +1,4 @@
-use crate::cpu::{
-    AddressingMode, Flag, Pins,
-    ReadWrite::{Read, Write},
-    CPU,
-};
+use crate::cpu::{Pins, ReadWrite::Read, CPU};
 
 impl CPU {
     pub fn POP(&mut self, pins: &mut Pins) {

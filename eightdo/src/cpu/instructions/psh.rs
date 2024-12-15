@@ -1,5 +1,5 @@
 use crate::cpu::{
-    AddressingMode, Flag, Pins,
+    AddressingMode, Pins,
     ReadWrite::{Read, Write},
     CPU,
 };

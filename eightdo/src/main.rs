@@ -17,7 +17,7 @@ fn main() {
     let out = Out::new(ExtendedAddress::new_18bit_address(0x3FFFF));
 
     let mut pins = Pins::default();
-    let mut cpu = CPU::new();
+    let mut cpu = CPU::new(None);
     cpu.reset(&mut pins);
 
     cpu.add_device(ram);

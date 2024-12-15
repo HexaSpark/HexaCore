@@ -153,9 +153,17 @@ impl ExtendedAddress {
         self.value = address as u32
     }
 
+    fn get_low_byte(&self) -> u8 {
+        self.value as u8
+    }
+
     fn set_low_byte(&mut self, byte: u8) {
         self.value &= 0x3FF00;
         self.value |= byte as u32
+    }
+
+    fn get_hi_byte(&self) -> u8 {
+        ((self.value & 0xFF00) >> 8) as u8
     }
 
     fn set_hi_byte(&mut self, byte: u8) {
@@ -165,6 +173,10 @@ impl ExtendedAddress {
 
     fn set_18bit_value(&mut self, address: u32) {
         self.value = address & 0x3FFFF
+    }
+
+    fn get_extended_value(&self) -> u8 {
+        ((self.value & 0x30000) >> 16) as u8
     }
 
     fn set_extended_value(&mut self, extended: u8) {
@@ -225,21 +237,23 @@ pub struct Pins {
     pub bus_enable: bool,
 }
 
+#[derive(Debug, Default)]
 pub struct EmuOptions {
-    flags: u8
+    flags: u8,
 }
 
+#[allow(dead_code)]
 impl EmuOptions {
     pub fn new() -> Self {
-        Self {
-            flags: 0
-        }
+        Self { flags: 0 }
     }
 
     pub fn new_value(flags: u8) -> Self {
-        Self {
-            flags
-        }
+        Self { flags }
+    }
+
+    fn exit_on_hlt(&self) -> bool {
+        self.flags & 1 > 0
     }
 
     fn set_exit_on_hlt(&mut self) {
@@ -267,13 +281,15 @@ pub struct CPU {
     // temp8: u8,
     temp16: u16,
     temp_addr: ExtendedAddress,
+    options: EmuOptions,
 }
 
 // Public
 impl CPU {
-    pub fn new() -> Self {
+    pub fn new(options: Option<EmuOptions>) -> Self {
         Self {
             cycle: 1,
+            options: options.unwrap_or_default(),
             ..Default::default()
         }
     }
@@ -287,7 +303,11 @@ impl CPU {
             CPUState::Reset => self.reset_handler(pins),
             CPUState::Fetch => self.fetch_handler(pins),
             CPUState::Execute => self.execute_handler(pins),
-            CPUState::Halt => return,
+            CPUState::Halt => {
+                if self.options.exit_on_hlt() {
+                    std::process::exit(0)
+                }
+            }
         }
 
         self.cycle += 1
@@ -331,6 +351,7 @@ impl CPU {
 
         self.state = CPUState::Reset;
         self.cycle = 1;
+        self.flags.0 .0 = 0;
 
         pins.address.set_16bit_value(0);
         pins.data = 0;
@@ -425,6 +446,26 @@ impl CPU {
             instructions::SUBI => self.SUB(pins, AddressingMode::Immediate),
             instructions::SUBR => self.SUB(pins, AddressingMode::Register),
             instructions::SUBA => self.SUB(pins, AddressingMode::Absolute),
+            instructions::CMPI => self.CMP(pins, AddressingMode::Immediate),
+            instructions::CMPR => self.CMP(pins, AddressingMode::Register),
+            instructions::CMPA => self.CMP(pins, AddressingMode::Absolute),
+            instructions::INCR => self.CMP(pins, AddressingMode::Register),
+            instructions::INCA => self.CMP(pins, AddressingMode::Absolute),
+            instructions::DECR => self.CMP(pins, AddressingMode::Register),
+            instructions::DECA => self.CMP(pins, AddressingMode::Absolute),
+            instructions::SBLR => self.SBL(pins, AddressingMode::Register),
+            instructions::SBLA => self.SBL(pins, AddressingMode::Absolute),
+            instructions::SBRR => self.SBR(pins, AddressingMode::Register),
+            instructions::SBRA => self.SBR(pins, AddressingMode::Absolute),
+            instructions::ROLR => self.ROL(pins, AddressingMode::Register),
+            instructions::ROLA => self.ROL(pins, AddressingMode::Absolute),
+            instructions::RORR => self.ROR(pins, AddressingMode::Register),
+            instructions::RORA => self.ROR(pins, AddressingMode::Absolute),
+            instructions::CLC => self.CLC(pins),
+            instructions::CLI => self.CLI(pins),
+            instructions::CLV => self.CLV(pins),
+            instructions::SEI => self.SEI(pins),
+            instructions::JMP => self.JMP(pins),
             _ => panic!("Unknown opcode: {:#04x}", self.instruction.opcode),
         }
     }
@@ -444,6 +485,7 @@ impl CPU {
             0x1 => &mut self.rb,
             0x2 => &mut self.rc,
             0x3 => &mut self.rd,
+            0x4 => &mut self.flags.0 .0,
             _ => panic!("Invalid register #"),
         }
     }
@@ -472,6 +514,70 @@ impl CPU {
             }
             Flag::I => todo!(),
             _ => panic!("Unhandled flag value given"),
+        }
+    }
+
+    fn jump_if_flag(&mut self, pins: &mut Pins, flag: Flag, inst_name: &str) {
+        match self.cycle {
+            1 => {
+                self.temp_addr
+                    .set_extended_value(self.instruction.metadata.ext_addr());
+                pins.address = self.pc;
+                pins.rw = ReadWrite::Read;
+            }
+            2 => {
+                self.temp_addr.set_hi_byte(pins.data);
+                self.pc.increment();
+
+                pins.address = self.pc;
+                pins.rw = ReadWrite::Read;
+            }
+            3 => {
+                self.temp_addr.set_low_byte(pins.data);
+                self.temp_addr
+                    .offset(self.instruction.metadata.offset() as i8);
+                
+                if self.flags.contains(flag) {
+                    self.pc = self.temp_addr;
+                } else {
+                    self.pc.increment();
+                }
+
+                self.finish(pins);
+            },
+            _ => panic!("{} tried to execute non-existent cycle {}", inst_name, self.cycle),
+        }
+    }
+
+    fn jump_not_flag(&mut self, pins: &mut Pins, flag: Flag, inst_name: &str) {
+        match self.cycle {
+            1 => {
+                self.temp_addr
+                    .set_extended_value(self.instruction.metadata.ext_addr());
+                pins.address = self.pc;
+                pins.rw = ReadWrite::Read;
+            }
+            2 => {
+                self.temp_addr.set_hi_byte(pins.data);
+                self.pc.increment();
+
+                pins.address = self.pc;
+                pins.rw = ReadWrite::Read;
+            }
+            3 => {
+                self.temp_addr.set_low_byte(pins.data);
+                self.temp_addr
+                    .offset(self.instruction.metadata.offset() as i8);
+                
+                if self.flags.contains(flag) {
+                    self.pc.increment();
+                } else {
+                    self.pc = self.temp_addr;
+                }
+
+                self.finish(pins);
+            },
+            _ => panic!("{} tried to execute non-existent cycle {}", inst_name, self.cycle),
         }
     }
 }

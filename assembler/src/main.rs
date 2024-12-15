@@ -22,7 +22,7 @@ impl InstructionInfo {
     }
 }
 
-const REGISTERS: [(&str, u8); 4] = [("ra", 0), ("rb", 1), ("rc", 2), ("rd", 3)];
+const REGISTERS: [(&str, u8); 5] = [("ra", 0), ("rb", 1), ("rc", 2), ("rd", 3), ("rf", 4)];
 
 const KEYWORDS: [&str; 5] = ["org", "word", "byte", "ascii", "asciiz"];
 
@@ -30,13 +30,13 @@ fn get_instructions() -> Vec<InstructionInfo> {
     fn gen_opcode(opcode: &str) -> u8 {
         let mut res: u8 = 0;
         let mut i = 0;
-    
+
         while i < opcode.len() {
             let x = opcode.as_bytes()[i];
             (res, _) = res.overflowing_add(x);
             i += 1;
         }
-    
+
         res
     }
 
@@ -50,13 +50,7 @@ fn get_instructions() -> Vec<InstructionInfo> {
                 ("RA".into(), gen_opcode("MOVA")),
             ]),
         ),
-        InstructionInfo::new(
-            "st",
-            2,
-            HashMap::from([
-                ("RA".into(), gen_opcode("STA")),
-            ]),
-        ),
+        InstructionInfo::new("st", 2, HashMap::from([("RA".into(), gen_opcode("STA"))])),
         InstructionInfo::new(
             "and",
             2,
@@ -92,20 +86,8 @@ fn get_instructions() -> Vec<InstructionInfo> {
                 ("R".into(), gen_opcode("PSHR")),
             ]),
         ),
-        InstructionInfo::new(
-            "mov",
-            1,
-            HashMap::from([
-                ("R".into(), gen_opcode("POPR")),
-            ]),
-        ),
-        InstructionInfo::new(
-            "hlt",
-            0,
-            HashMap::from([
-                ("M".into(), gen_opcode("HLT ")),
-            ])
-        ),
+        InstructionInfo::new("mov", 1, HashMap::from([("R".into(), gen_opcode("POPR"))])),
+        InstructionInfo::new("hlt", 0, HashMap::from([("M".into(), gen_opcode("HLT "))])),
         InstructionInfo::new(
             "add",
             2,
@@ -113,7 +95,7 @@ fn get_instructions() -> Vec<InstructionInfo> {
                 ("RI".into(), gen_opcode("ADDI")),
                 ("RR".into(), gen_opcode("ADDR")),
                 ("RA".into(), gen_opcode("ADDA")),
-            ])
+            ]),
         ),
         InstructionInfo::new(
             "sub",
@@ -122,7 +104,84 @@ fn get_instructions() -> Vec<InstructionInfo> {
                 ("RI".into(), gen_opcode("SUBI ")),
                 ("RR".into(), gen_opcode("SUBR")),
                 ("RA".into(), gen_opcode("SUBA")),
+            ]),
+        ),
+        InstructionInfo::new(
+            "cmp",
+            2,
+            HashMap::from([
+                ("RI".into(), gen_opcode("CMPI")),
+                ("RR".into(), gen_opcode("CMPR")),
+                ("RA".into(), gen_opcode("CMPA")),
+            ]),
+        ),
+        InstructionInfo::new(
+            "inc",
+            1,
+            HashMap::from([
+                ("R".into(), gen_opcode("INCR")),
+                ("A".into(), gen_opcode("INCA  ")),
+            ]),
+        ),
+        InstructionInfo::new(
+            "dec",
+            1,
+            HashMap::from([
+                ("R".into(), gen_opcode("DECR")),
+                ("A".into(), gen_opcode("DECA")),
+            ]),
+        ),
+        InstructionInfo::new(
+            "sbl",
+            1,
+            HashMap::from([
+                ("R".into(), gen_opcode("SBLR  ")),
+                ("A".into(), gen_opcode("SBLA")),
             ])
+        ),
+        InstructionInfo::new(
+            "sbr",
+            1,
+            HashMap::from([
+                ("R".into(), gen_opcode("SBRR")),
+                ("A".into(), gen_opcode("SBRA")),
+            ])
+        ),
+        InstructionInfo::new(
+            "rol",
+            1,
+            HashMap::from([
+                ("R".into(), gen_opcode("ROLR")),
+                ("A".into(), gen_opcode("ROLA")),
+            ])
+        ),
+        InstructionInfo::new(
+            "ror",
+            1,
+            HashMap::from([
+                ("R".into(), gen_opcode("RORR")),
+                ("A".into(), gen_opcode("RORA ")),
+            ])
+        ),
+        InstructionInfo::new(
+            "clc",
+            0,
+            HashMap::from([("M".into(), gen_opcode("CLC"))])
+        ),
+        InstructionInfo::new(
+            "cli",
+            0,
+            HashMap::from([("M".into(), gen_opcode("CLI"))])
+        ),
+        InstructionInfo::new(
+            "clv",
+            0,
+            HashMap::from([("M".into(), gen_opcode("CLV"))])
+        ),
+        InstructionInfo::new(
+            "sei",
+            0,
+            HashMap::from([("M".into(), gen_opcode("SEI"))])
         ),
     ]
 }

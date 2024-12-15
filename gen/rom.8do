@@ -3,6 +3,6 @@ jump_table: .byte 0x00 .word $0100
 .org $0100
 
 main:
-    mov ra, 0xD0
-    add ra, 0xA
+    mov ra, 0x12
+    sub ra, 0xA
     hlt
