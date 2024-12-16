@@ -79,6 +79,7 @@ mod consts {
     pub const BNO: u8 = gen_opcode("BNO");
     pub const BNL: u8 = gen_opcode("BNL");
     pub const BNG: u8 = gen_opcode("BNG ");
+    pub const RTS: u8 = gen_opcode("RTS");
 
     const fn gen_opcode(opcode: &str) -> u8 {
         let mut res: u8 = 0;

@@ -479,6 +479,7 @@ impl CPU {
             instructions::BNO => self.BNO(pins),
             instructions::BNL => self.BNL(pins),
             instructions::BNG => self.BNG(pins),
+            instructions::RTS => self.RTS(pins),
             _ => panic!("Unknown opcode: {:#04x}", self.instruction.opcode),
         }
     }

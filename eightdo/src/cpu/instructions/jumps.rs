@@ -96,10 +96,12 @@ impl CPU {
                 self.temp_addr
                     .offset(self.instruction.metadata.offset() as i8);
                 
-                self.pc = self.temp_addr;
-                self.finish(pins);
+                pins.address = self.sp.into();
+                pins.data = self.flags.bits();
+                pins.rw = Write;
             },
             4 => {
+                self.sp.increment();
                 pins.address = self.sp.into();
                 pins.data = self.pc.get_extended_value();
                 pins.rw = Write;
@@ -122,6 +124,44 @@ impl CPU {
                 self.finish(pins);
             }
             _ => panic!("JSR tried to execute non-existent cycle {}", self.cycle),
+        }
+    }
+
+    pub fn RTS(&mut self, pins: &mut Pins) {
+        match self.cycle {
+            1 => {
+                pins.address = self.sp.into();
+                pins.rw = Read;
+            },
+            2 => {
+                self.sp.decrement();
+                self.temp_addr.set_low_byte(pins.data);
+
+                pins.address = self.sp.into();
+                pins.rw = Read;
+            }
+            3 => {
+                self.sp.decrement();
+                self.temp_addr.set_hi_byte(pins.data);
+
+                pins.address = self.sp.into();
+                pins.rw = Read;
+            }
+            4 => {
+                self.sp.decrement();
+                self.temp_addr.set_extended_value(pins.data);
+
+                pins.address = self.sp.into();
+                pins.rw = Read;
+            },
+            5 => {
+                self.sp.decrement();
+                self.flags.0.0 = pins.data;
+
+                self.pc = self.temp_addr;
+                self.finish(pins);
+            }
+            _ => panic!("RTS tried to execute non-existent cycle {}", self.cycle),
         }
     }
 }
