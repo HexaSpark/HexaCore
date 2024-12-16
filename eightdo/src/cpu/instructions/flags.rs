@@ -1,4 +1,4 @@
-use crate::cpu::{AddressingMode, Flag, Pins, ReadWrite::{Read, Write}, CPU};
+use crate::cpu::{Flag, Pins, CPU};
 
 impl CPU {
     pub fn CLC(&mut self, pins: &mut Pins) {

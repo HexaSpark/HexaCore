@@ -21,6 +21,7 @@ mod rol;
 mod ror;
 mod flags;
 mod jumps;
+mod io;
 
 mod consts {
     pub const MOVI: u8 = gen_opcode("MOVI");
@@ -80,6 +81,8 @@ mod consts {
     pub const BNL: u8 = gen_opcode("BNL");
     pub const BNG: u8 = gen_opcode("BNG ");
     pub const RTS: u8 = gen_opcode("RTS");
+    pub const IN: u8 = gen_opcode("IN");
+    pub const OUT: u8 = gen_opcode("OUT");
 
     const fn gen_opcode(opcode: &str) -> u8 {
         let mut res: u8 = 0;

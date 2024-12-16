@@ -1,5 +1,5 @@
 use eightdo::{
-    cpu::{ExtendedAddress, Pins, ReadWrite, CPU},
+    cpu::{EmuOptions, ExtendedAddress, Pins, ReadWrite, CPU},
     device::{DeviceResult, Out, RAM, ROM},
 };
 
@@ -7,22 +7,22 @@ fn main() {
     let rom = ROM::new_from_file(
         ExtendedAddress::new_16bit_address(0x0000),
         ExtendedAddress::new_16bit_address(0x7FFF),
-        "../gen/rom.bin".into(),
+        "gen/rom.bin".into(),
     );
     let ram = RAM::new(
         ExtendedAddress::new_16bit_address(0x8000),
-        ExtendedAddress::new_18bit_address(0x3FFFE),
+        ExtendedAddress::new_18bit_address(0x3FFFF),
     );
 
-    let out = Out::new(ExtendedAddress::new_18bit_address(0x3FFFF));
+    let out = Out::new(0xA0);
 
     let mut pins = Pins::default();
-    let mut cpu = CPU::new(None);
+    let mut cpu = CPU::new(Some(EmuOptions::new_value(1)));
     cpu.reset(&mut pins);
 
     cpu.add_device(ram);
     cpu.add_device(rom);
-    cpu.add_device(out);
+    cpu.add_io_device(out);
 
     loop {
         cpu.cycle(&mut pins);
@@ -41,6 +41,24 @@ fn main() {
                 if let DeviceResult::Ok(_) = res {
                 } else {
                     panic!("Device Error: {:?}", res);
+                }
+            }
+        }
+
+        if pins.io_enable {
+            if pins.io_rw == ReadWrite::Read {
+                let res = cpu.read_io(pins.io_address);
+
+                if let DeviceResult::Ok(val) = res {
+                    pins.io_data = val;
+                } else {
+                    panic!("IO Device Error: {:?}", res);
+                }
+            } else {
+                let res = cpu.write_io(pins.io_address, pins.io_data);
+
+                if let DeviceResult::Ok(_) = res {} else {
+                    panic!("IO Device Error: {:?}", res);
                 }
             }
         }

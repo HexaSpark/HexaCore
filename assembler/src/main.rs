@@ -182,6 +182,8 @@ fn get_instructions() -> Vec<InstructionInfo> {
         InstructionInfo::new("bnl", 1, HashMap::from([("A".into(), gen_opcode("BNL"))])),
         InstructionInfo::new("bng", 1, HashMap::from([("A".into(), gen_opcode("BNG "))])),
         InstructionInfo::new("rts", 0, HashMap::from([("M".into(), gen_opcode("RTS"))])),
+        InstructionInfo::new("in", 2, HashMap::from([("RI".into(), gen_opcode("IN"))])),
+        InstructionInfo::new("out", 2, HashMap::from([("RI".into(), gen_opcode("OUT"))])),
     ]
 }
 

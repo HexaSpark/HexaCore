@@ -4,13 +4,14 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::device::DeviceResult;
+use crate::device::{DeviceResult, IOMappedDevice};
 use bitflags::bitflags;
 use proc_bitfield::bitfield;
 
 use super::device::AddressMappedDevice;
 
 type AddressMappedDevices = Vec<Arc<Mutex<dyn AddressMappedDevice>>>;
+type IOMappedDevices = Vec<Arc<Mutex<dyn IOMappedDevice>>>;
 
 bitflags! {
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -235,6 +236,10 @@ pub struct Pins {
     pub data: u8,
     pub rw: ReadWrite,
     pub bus_enable: bool,
+    pub io_address: u8,
+    pub io_data: u8,
+    pub io_rw: ReadWrite,
+    pub io_enable: bool
 }
 
 #[derive(Debug, Default)]
@@ -275,6 +280,7 @@ pub struct CPU {
     pc: ExtendedAddress,
     sp: StackAddress,
     devices: AddressMappedDevices,
+    io_devices: IOMappedDevices,
     instruction: Instruction,
     state: CPUState,
     cycle: u8,
@@ -298,6 +304,10 @@ impl CPU {
         self.devices.push(Arc::new(Mutex::new(device)));
     }
 
+    pub fn add_io_device<T: IOMappedDevice + 'static>(&mut self, device: T) {
+        self.io_devices.push(Arc::new(Mutex::new(device)));
+    }
+
     pub fn cycle(&mut self, pins: &mut Pins) {
         match self.state {
             CPUState::Reset => self.reset_handler(pins),
@@ -306,6 +316,9 @@ impl CPU {
             CPUState::Halt => {
                 if self.options.exit_on_hlt() {
                     std::process::exit(0)
+                } else {
+                    self.cycle -= 1;
+
                 }
             }
         }
@@ -341,6 +354,34 @@ impl CPU {
         DeviceResult::NoValidDevice
     }
 
+    pub fn read_io(&self, address: u8) -> DeviceResult {
+        for device in &self.io_devices {
+            let dev_unwrapped = device.lock().unwrap();
+
+            if dev_unwrapped.address() != address {
+                continue;
+            }
+
+            return dev_unwrapped.read();
+        }
+
+        DeviceResult::NoValidDevice
+    }
+
+    pub fn write_io(&mut self, address: u8, data: u8) -> DeviceResult {
+        for device in &self.io_devices {
+            let mut dev_unwrapped = device.lock().unwrap();
+
+            if dev_unwrapped.address() != address {
+                continue;
+            }
+
+            return dev_unwrapped.write(data);
+        }
+
+        DeviceResult::NoValidDevice
+    }
+
     pub fn reset(&mut self, pins: &mut Pins) {
         self.ra = 0;
         self.rb = 0;
@@ -355,8 +396,12 @@ impl CPU {
 
         pins.address.set_16bit_value(0);
         pins.data = 0;
-        pins.bus_enable = true;
         pins.rw = ReadWrite::Read;
+        pins.bus_enable = true;
+        pins.io_address = 0;
+        pins.io_data = 0;
+        pins.rw = ReadWrite::Read;
+        pins.io_enable = false;
     }
 }
 
@@ -480,6 +525,8 @@ impl CPU {
             instructions::BNL => self.BNL(pins),
             instructions::BNG => self.BNG(pins),
             instructions::RTS => self.RTS(pins),
+            instructions::IN => self.IN(pins),
+            instructions::OUT => self.OUT(pins),
             _ => panic!("Unknown opcode: {:#04x}", self.instruction.opcode),
         }
     }

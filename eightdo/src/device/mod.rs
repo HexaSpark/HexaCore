@@ -1,11 +1,11 @@
-pub mod out;
-pub mod ram;
-pub mod rom;
+mod address;
+mod io;
 
 use crate::cpu::ExtendedAddress;
-pub use out::Out;
-pub use ram::RAM;
-pub use rom::ROM;
+pub use address::ram::RAM;
+pub use address::rom::ROM;
+
+pub use io::out::Out;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DeviceResult {
@@ -26,4 +26,11 @@ pub trait AddressMappedDevice {
     fn size(&self) -> usize;
     fn start(&self) -> ExtendedAddress;
     fn end(&self) -> ExtendedAddress;
+}
+
+pub trait IOMappedDevice {
+    fn address(&self) -> u8;
+    fn read(&self) -> DeviceResult;
+    fn write(&mut self, data: u8) -> DeviceResult;
+    fn name(&self) -> &str;
 }
