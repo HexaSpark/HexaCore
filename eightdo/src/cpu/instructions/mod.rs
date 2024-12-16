@@ -66,6 +66,19 @@ mod consts {
     pub const CLV: u8 = gen_opcode("CLV");
     pub const SEI: u8 = gen_opcode("SEI");
     pub const JMP: u8 = gen_opcode("JMP");
+    pub const JSR: u8 = gen_opcode("JSR");
+    pub const BIZ: u8 = gen_opcode("BIZ ");
+    pub const BIN: u8 = gen_opcode("BIN");
+    pub const BIC: u8 = gen_opcode("BIC");
+    pub const BIO: u8 = gen_opcode("BIO");
+    pub const BIL: u8 = gen_opcode("BIL");
+    pub const BIG: u8 = gen_opcode("BIG ");
+    pub const BNZ: u8 = gen_opcode("BNZ  ");
+    pub const BNN: u8 = gen_opcode("BNN");
+    pub const BNC: u8 = gen_opcode("BNC");
+    pub const BNO: u8 = gen_opcode("BNO");
+    pub const BNL: u8 = gen_opcode("BNL");
+    pub const BNG: u8 = gen_opcode("BNG ");
 
     const fn gen_opcode(opcode: &str) -> u8 {
         let mut res: u8 = 0;

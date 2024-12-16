@@ -137,7 +137,7 @@ fn get_instructions() -> Vec<InstructionInfo> {
             HashMap::from([
                 ("R".into(), gen_opcode("SBLR  ")),
                 ("A".into(), gen_opcode("SBLA")),
-            ])
+            ]),
         ),
         InstructionInfo::new(
             "sbr",
@@ -145,7 +145,7 @@ fn get_instructions() -> Vec<InstructionInfo> {
             HashMap::from([
                 ("R".into(), gen_opcode("SBRR")),
                 ("A".into(), gen_opcode("SBRA")),
-            ])
+            ]),
         ),
         InstructionInfo::new(
             "rol",
@@ -153,7 +153,7 @@ fn get_instructions() -> Vec<InstructionInfo> {
             HashMap::from([
                 ("R".into(), gen_opcode("ROLR")),
                 ("A".into(), gen_opcode("ROLA")),
-            ])
+            ]),
         ),
         InstructionInfo::new(
             "ror",
@@ -161,28 +161,26 @@ fn get_instructions() -> Vec<InstructionInfo> {
             HashMap::from([
                 ("R".into(), gen_opcode("RORR")),
                 ("A".into(), gen_opcode("RORA ")),
-            ])
+            ]),
         ),
-        InstructionInfo::new(
-            "clc",
-            0,
-            HashMap::from([("M".into(), gen_opcode("CLC"))])
-        ),
-        InstructionInfo::new(
-            "cli",
-            0,
-            HashMap::from([("M".into(), gen_opcode("CLI"))])
-        ),
-        InstructionInfo::new(
-            "clv",
-            0,
-            HashMap::from([("M".into(), gen_opcode("CLV"))])
-        ),
-        InstructionInfo::new(
-            "sei",
-            0,
-            HashMap::from([("M".into(), gen_opcode("SEI"))])
-        ),
+        InstructionInfo::new("clc", 0, HashMap::from([("M".into(), gen_opcode("CLC"))])),
+        InstructionInfo::new("cli", 0, HashMap::from([("M".into(), gen_opcode("CLI"))])),
+        InstructionInfo::new("clv", 0, HashMap::from([("M".into(), gen_opcode("CLV"))])),
+        InstructionInfo::new("sei", 0, HashMap::from([("M".into(), gen_opcode("SEI"))])),
+        InstructionInfo::new("jmp", 1, HashMap::from([("A".into(), gen_opcode("JMP"))])),
+        InstructionInfo::new("jsr", 1, HashMap::from([("A".into(), gen_opcode("JSR"))])),
+        InstructionInfo::new("biz", 1, HashMap::from([("A".into(), gen_opcode("BIZ "))])),
+        InstructionInfo::new("bin", 1, HashMap::from([("A".into(), gen_opcode("BIN"))])),
+        InstructionInfo::new("bic", 1, HashMap::from([("A".into(), gen_opcode("BIC"))])),
+        InstructionInfo::new("bio", 1, HashMap::from([("A".into(), gen_opcode("BIO"))])),
+        InstructionInfo::new("bil", 1, HashMap::from([("A".into(), gen_opcode("BIL"))])),
+        InstructionInfo::new("big", 1, HashMap::from([("A".into(), gen_opcode("BIG "))])),
+        InstructionInfo::new("bnz", 1, HashMap::from([("A".into(), gen_opcode("BNZ  "))])),
+        InstructionInfo::new("bnn", 1, HashMap::from([("A".into(), gen_opcode("BNN"))])),
+        InstructionInfo::new("bnc", 1, HashMap::from([("A".into(), gen_opcode("BNC"))])),
+        InstructionInfo::new("bno", 1, HashMap::from([("A".into(), gen_opcode("BNO"))])),
+        InstructionInfo::new("bnl", 1, HashMap::from([("A".into(), gen_opcode("BNL"))])),
+        InstructionInfo::new("bng", 1, HashMap::from([("A".into(), gen_opcode("BNG "))])),
     ]
 }
 
