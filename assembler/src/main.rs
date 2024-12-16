@@ -181,6 +181,7 @@ fn get_instructions() -> Vec<InstructionInfo> {
         InstructionInfo::new("bno", 1, HashMap::from([("A".into(), gen_opcode("BNO"))])),
         InstructionInfo::new("bnl", 1, HashMap::from([("A".into(), gen_opcode("BNL"))])),
         InstructionInfo::new("bng", 1, HashMap::from([("A".into(), gen_opcode("BNG "))])),
+        InstructionInfo::new("rts", 0, HashMap::from([("M".into(), gen_opcode("RTS"))])),
     ]
 }
 
@@ -622,15 +623,28 @@ impl Assembler {
                             }
                             Token::Address(address) => {
                                 let opcode = *info.opcode.get("A").unwrap();
+                                let address = *address;
                                 let ext = ((address & 0x30000) >> 10) as u8;
+                                self.advance();
+
+                                if let Token::Plus = self.current_token {
+                                    self.advance();
+
+                                    if let Token::Int(offset) = self.current_token {
+                                        data[self.address + 1].0 = offset as u8;
+                                        self.advance();
+                                    } else {
+                                        panic!("Expected Int, not {:?}", self.current_token);
+                                    }
+                                } else {
+                                    data[self.address + 1].0 = 0;
+                                }
 
                                 data[self.address].0 = opcode;
-                                data[self.address + 1].0 = 0;
                                 data[self.address + 2].0 = 0x3F | ext;
                                 data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
                                 data[self.address + 4].0 = (address & 0xFF) as u8;
                                 self.address += 5;
-                                self.advance();
                             }
                             Token::Identifier(ident) => {
                                 let opcode = *info.opcode.get("A").unwrap();
@@ -700,15 +714,28 @@ impl Assembler {
                                 }
                                 Token::Address(address) => {
                                     let opcode = *info.opcode.get("RA").unwrap();
+                                    let address = *address;
                                     let ext = ((address & 0x30000) >> 10) as u8;
+                                    self.advance();
+
+                                    if let Token::Plus = self.current_token {
+                                        self.advance();
+    
+                                        if let Token::Int(offset) = self.current_token {
+                                            data[self.address + 1].0 = offset as u8;
+                                            self.advance();
+                                        } else {
+                                            panic!("Expected Int, not {:?}", self.current_token);
+                                        }
+                                    } else {
+                                        data[self.address + 1].0 = 0;
+                                    }
 
                                     data[self.address].0 = opcode;
-                                    data[self.address + 1].0 = 0;
                                     data[self.address + 2].0 = dest_reg | ext;
                                     data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
                                     data[self.address + 4].0 = (address & 0xFF) as u8;
                                     self.address += 5;
-                                    self.advance();
                                 }
                                 Token::Identifier(ident) => {
                                     let opcode = *info.opcode.get("RA").unwrap();
@@ -741,7 +768,7 @@ impl Assembler {
                         _ => panic!("Invalid instruction size"),
                     }
                 }
-                _ => panic!("Unknown Token to Assemble"),
+                _ => panic!("Unknown Token to Assemble: {:?}", self.current_token),
             }
         }
 
