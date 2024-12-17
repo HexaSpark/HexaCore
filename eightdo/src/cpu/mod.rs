@@ -494,10 +494,10 @@ impl CPU {
             instructions::CMPI => self.CMP(pins, AddressingMode::Immediate),
             instructions::CMPR => self.CMP(pins, AddressingMode::Register),
             instructions::CMPA => self.CMP(pins, AddressingMode::Absolute),
-            instructions::INCR => self.CMP(pins, AddressingMode::Register),
-            instructions::INCA => self.CMP(pins, AddressingMode::Absolute),
-            instructions::DECR => self.CMP(pins, AddressingMode::Register),
-            instructions::DECA => self.CMP(pins, AddressingMode::Absolute),
+            instructions::INCR => self.INC(pins, AddressingMode::Register),
+            instructions::INCA => self.INC(pins, AddressingMode::Absolute),
+            instructions::DECR => self.DEC(pins, AddressingMode::Register),
+            instructions::DECA => self.DEC(pins, AddressingMode::Absolute),
             instructions::SBLR => self.SBL(pins, AddressingMode::Register),
             instructions::SBLA => self.SBL(pins, AddressingMode::Absolute),
             instructions::SBRR => self.SBR(pins, AddressingMode::Register),
@@ -542,11 +542,14 @@ impl CPU {
         reg &= 0b111;
 
         match reg {
-            0x0 => &mut self.ra,
-            0x1 => &mut self.rb,
-            0x2 => &mut self.rc,
-            0x3 => &mut self.rd,
-            0x4 => &mut self.flags.0 .0,
+            0b000 => &mut self.ra,
+            0b001 => &mut self.rb,
+            0b010 => &mut self.rc,
+            0b011 => &mut self.rd,
+            0b100 => &mut self.ra,
+            0b101 => &mut self.rb,
+            0b110 => &mut self.rc,
+            0b111 => &mut self.rd,
             _ => panic!("Invalid register #"),
         }
     }

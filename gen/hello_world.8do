@@ -1,0 +1,27 @@
+jump_table: .byte 0x00 .word $0200
+
+.org $0100
+
+str: .asciiz "Hello, world!\n"
+
+.org $0200
+
+main:
+    jsr print        ; Jump to the print subroutine
+    hlt              ; Halt the CPU. This exits the program.
+
+print:
+    mov ra, 0x01     ; String Mode
+    mov rb, 0x00     ; Index
+print_loop:
+    mov rc, str + rb ; Get character
+
+    cmp rc, 0x00     ; Have we reached the end of the string?
+    BIZ print_end    ; Yes, end the subroutine
+
+    out ra, 0xA0     ; No, write the mode to the out device
+    out rc, 0xA0     ; Write the character to the device
+    inc rb           ; Increment index
+    jmp print_loop   ; Loop back
+print_end:
+    rts              ; Return out of the subroutine

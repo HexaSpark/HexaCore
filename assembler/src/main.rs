@@ -3,6 +3,7 @@ use std::{
     fs::{self, File},
     io::Write,
     str::Chars,
+    env
 };
 
 #[derive(Clone)]
@@ -383,6 +384,15 @@ impl<'a> LexerParser<'a> {
                 '-' => {
                     self.advance();
                     tokens.push(Token::Minus)
+                },
+                ';' => {
+                    self.advance();
+                    
+                    while self.current_char != '\n' {
+                        self.advance();
+                    }
+
+                    self.advance();
                 }
                 _ => {
                     if self.current_char.is_ascii_alphanumeric() || self.current_char == '_' {
@@ -444,10 +454,21 @@ impl<'a> LexerParser<'a> {
         let mut string = String::new();
         let mut escaped = false;
 
+        let escape_reserved: HashMap<char, char> = HashMap::from([
+            ('n', '\n'),
+            ('t', '\t'),
+        ]);
+
         while self.current_char != '\0' {
             if escaped {
-                string.push(self.current_char);
+                if escape_reserved.contains_key(&self.current_char) {
+                    string.push(escape_reserved[&self.current_char]);
+                } else {
+                    string.push(self.current_char);
+                }
+                
                 escaped = false;
+                self.advance();
             }
 
             if self.current_char == '\\' {
@@ -600,7 +621,7 @@ impl Assembler {
 
                             data[self.address].0 = opcode;
                             data[self.address + 1].0 = 0x00;
-                            data[self.address + 2].0 = 0x3F;
+                            data[self.address + 2].0 = 0x00;
                             self.address += 3;
                         }
                         1 => match &self.current_token {
@@ -618,7 +639,7 @@ impl Assembler {
 
                                 data[self.address].0 = opcode;
                                 data[self.address + 1].0 = 0;
-                                data[self.address + 2].0 = 0x3F;
+                                data[self.address + 2].0 = 0x00;
                                 data[self.address + 3].0 = *num as u8;
                                 self.address += 4;
                                 self.advance();
@@ -632,36 +653,58 @@ impl Assembler {
                                 if let Token::Plus = self.current_token {
                                     self.advance();
 
-                                    if let Token::Int(offset) = self.current_token {
-                                        data[self.address + 1].0 = offset as u8;
+                                    if let Token::Int(offset) = &self.current_token {
+                                        data[self.address + 1].0 = *offset as u8;
+                                        self.advance();
+                                    } else if let Token::Register(reg) = &self.current_token {
+                                        let reg_num = get_register(reg) | 0b100;
+                                        data[self.address + 2].0 |= reg_num << 3;
                                         self.advance();
                                     } else {
-                                        panic!("Expected Int, not {:?}", self.current_token);
+                                        panic!("Expected Int or Register, not {:?}", self.current_token);
                                     }
                                 } else {
                                     data[self.address + 1].0 = 0;
                                 }
 
                                 data[self.address].0 = opcode;
-                                data[self.address + 2].0 = 0x3F | ext;
+                                data[self.address + 2].0 |= ext;
                                 data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
                                 data[self.address + 4].0 = (address & 0xFF) as u8;
                                 self.address += 5;
                             }
-                            Token::Identifier(ident) => {
+                            Token::Identifier(identifier) => {
+                                let ident = &identifier.clone();
                                 let opcode = *info.opcode.get("A").unwrap();
+                                let ident_tok = self.current_token.clone();
+                                self.advance();
 
                                 data[self.address].0 = opcode;
                                 data[self.address + 1].0 = 0;
-                                data[self.address + 2].0 = 0x3F;
+
+                                if let Token::Plus = self.current_token {
+                                    self.advance();
+
+                                    if let Token::Int(offset) = self.current_token {
+                                        data[self.address + 1].0 = offset as u8;
+                                        self.advance();
+                                    } else if let Token::Register(reg) = &self.current_token {
+                                        let reg_num = get_register(reg) | 0b100;
+                                        data[self.address + 2].0 |= reg_num << 3;
+                                        self.advance();
+                                    } else {
+                                        panic!("Expected Int or Register, not {:?}", self.current_token);
+                                    }
+                                } else {
+                                    data[self.address + 1].0 = 0;
+                                }
 
                                 if !self.labels.contains_key(ident) {
                                     data[self.address + 3].1 =
-                                        TokenOption::Some(self.current_token.clone());
+                                        TokenOption::Some(ident_tok);
                                     data[self.address + 4].1 = TokenOption::Prev;
 
                                     self.address += 5;
-                                    self.advance();
                                     continue;
                                 }
 
@@ -671,7 +714,6 @@ impl Assembler {
                                 data[self.address + 3].0 = ((value & 0xFF00) >> 8) as u8;
                                 data[self.address + 4].0 = (value & 0xFF) as u8;
                                 self.address += 5;
-                                self.advance();
                             }
                             _ => panic!("Invalid Token with instruction size 1"),
                         },
@@ -726,8 +768,12 @@ impl Assembler {
                                         if let Token::Int(offset) = self.current_token {
                                             data[self.address + 1].0 = offset as u8;
                                             self.advance();
+                                        } else if let Token::Register(reg) = &self.current_token {
+                                            let reg_num = get_register(reg) | 0b100;
+                                            data[self.address + 2].0 |= reg_num << 3;
+                                            self.advance();
                                         } else {
-                                            panic!("Expected Int, not {:?}", self.current_token);
+                                            panic!("Expected Int or Register, not {:?}", self.current_token);
                                         }
                                     } else {
                                         data[self.address + 1].0 = 0;
@@ -739,20 +785,38 @@ impl Assembler {
                                     data[self.address + 4].0 = (address & 0xFF) as u8;
                                     self.address += 5;
                                 }
-                                Token::Identifier(ident) => {
+                                Token::Identifier(identifier) => {
+                                    let ident = &identifier.clone();
                                     let opcode = *info.opcode.get("RA").unwrap();
+                                    let ident_tok = self.current_token.clone();
+                                    self.advance();
 
                                     data[self.address].0 = opcode;
-                                    data[self.address + 1].0 = 0;
                                     data[self.address + 2].0 = dest_reg;
+
+                                    if let Token::Plus = self.current_token {
+                                        self.advance();
+    
+                                        if let Token::Int(offset) = self.current_token {
+                                            data[self.address + 1].0 = offset as u8;
+                                            self.advance();
+                                        } else if let Token::Register(reg) = &self.current_token {
+                                            let reg_num = get_register(reg) | 0b100;
+                                            data[self.address + 2].0 |= reg_num << 3;
+                                            self.advance();
+                                        } else {
+                                            panic!("Expected Int or Register, not {:?}", self.current_token);
+                                        }
+                                    } else {
+                                        data[self.address + 1].0 = 0;
+                                    }
 
                                     if !self.labels.contains_key(ident) {
                                         data[self.address + 3].1 =
-                                            TokenOption::Some(self.current_token.clone());
+                                            TokenOption::Some(ident_tok);
                                         data[self.address + 4].1 = TokenOption::Prev;
 
                                         self.address += 5;
-                                        self.advance();
                                         continue;
                                     }
 
@@ -762,7 +826,6 @@ impl Assembler {
                                     data[self.address + 3].0 = ((value & 0xFF00) >> 8) as u8;
                                     data[self.address + 4].0 = (value & 0xFF) as u8;
                                     self.address += 5;
-                                    self.advance();
                                 }
                                 _ => panic!("Invalid Token with instruction size 2"),
                             }
@@ -779,7 +842,14 @@ impl Assembler {
 }
 
 fn main() {
-    let content = fs::read_to_string("gen/rom.8do").unwrap();
+    let mut args: Vec<String> = env::args().collect();
+    args.remove(0);
+
+    if args.len() != 1 {
+        panic!("Missing file argument.");
+    }
+
+    let content = fs::read_to_string(&args[0]).unwrap();
     let mut lexer = LexerParser::new(&content);
     let (tokens, error) = lexer.tokenize();
 
@@ -817,6 +887,8 @@ fn main() {
         prog[i] = *data;
     }
 
-    let mut file = File::create("gen/rom.bin").unwrap();
+    let bin_name = args[0].strip_suffix(".8do").unwrap().to_owned() + ".bin";
+
+    let mut file = File::create(bin_name).unwrap();
     file.write_all(&prog).unwrap();
 }

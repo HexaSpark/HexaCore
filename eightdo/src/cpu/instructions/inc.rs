@@ -38,6 +38,11 @@ impl CPU {
                     self.temp_addr.set_low_byte(pins.data);
                     self.temp_addr
                         .offset(self.instruction.metadata.offset() as i8);
+                    let r1 = self.instruction.metadata.reg1();
+                    if r1 & 0b100 > 0 {
+                        let val = *self.decode_register(r1) as i8;
+                        self.temp_addr.offset(val);
+                    }
                     self.pc.increment();
 
                     pins.address = self.temp_addr;

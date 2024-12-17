@@ -3,11 +3,19 @@ use eightdo::{
     device::{DeviceResult, Out, RAM, ROM},
 };
 
-fn main() {
+use std::env;
+
+fn main() {let mut args: Vec<String> = env::args().collect();
+    args.remove(0);
+
+    if args.len() != 1 {
+        panic!("Missing ROM file argument.");
+    }
+    
     let rom = ROM::new_from_file(
         ExtendedAddress::new_16bit_address(0x0000),
         ExtendedAddress::new_16bit_address(0x7FFF),
-        "gen/rom.bin".into(),
+        (&args[0]).into(),
     );
     let ram = RAM::new(
         ExtendedAddress::new_16bit_address(0x8000),

@@ -10,9 +10,10 @@ impl CPU {
                 }
                 2 => {
                     let reg = *self.decode_register(self.instruction.metadata.reg0());
+                    let (reg_n_flag, _) = reg.overflowing_sub(pins.data);
 
                     self.flags.set(Flag::Z, reg == pins.data);
-                    self.flags.set(Flag::N, ((reg - pins.data) & 0x80) > 0);
+                    self.flags.set(Flag::N, (reg_n_flag & 0x80) > 0);
                     self.flags.set(Flag::G, reg > pins.data);
                     self.flags.set(Flag::L, reg < pins.data);
 
@@ -25,8 +26,10 @@ impl CPU {
                 let reg0 = *self.decode_register(self.instruction.metadata.reg0());
                 let reg1 = *self.decode_register(self.instruction.metadata.reg1());
 
+                let (reg_n_flag, _) = reg0.overflowing_sub(reg1);
+
                 self.flags.set(Flag::Z, reg0 == reg1);
-                self.flags.set(Flag::N, ((reg0 - reg1) & 0x80) > 0);
+                self.flags.set(Flag::N, (reg_n_flag & 0x80) > 0);
                 self.flags.set(Flag::G, reg0 > reg1);
                 self.flags.set(Flag::L, reg0 < reg1);
 
@@ -50,6 +53,11 @@ impl CPU {
                     self.temp_addr.set_low_byte(pins.data);
                     self.temp_addr
                         .offset(self.instruction.metadata.offset() as i8);
+                    let r1 = self.instruction.metadata.reg1();
+                    if r1 & 0b100 > 0 {
+                        let val = *self.decode_register(r1) as i8;
+                        self.temp_addr.offset(val);
+                    }
                     self.pc.increment();
 
                     pins.address = self.temp_addr;
@@ -57,9 +65,10 @@ impl CPU {
                 }
                 4 => {
                     let reg = *self.decode_register(self.instruction.metadata.reg0());
+                    let (reg_n_flag, _) = reg.overflowing_sub(pins.data);
 
                     self.flags.set(Flag::Z, reg == pins.data);
-                    self.flags.set(Flag::N, ((reg - pins.data) & 0x80) > 0);
+                    self.flags.set(Flag::N, (reg_n_flag & 0x80) > 0);
                     self.flags.set(Flag::G, reg > pins.data);
                     self.flags.set(Flag::L, reg < pins.data);
 

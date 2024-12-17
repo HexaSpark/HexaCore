@@ -20,6 +20,11 @@ impl CPU {
                 self.temp_addr.set_low_byte(pins.data);
                 self.temp_addr
                     .offset(self.instruction.metadata.offset() as i8);
+                let r1 = self.instruction.metadata.reg1();
+                if r1 & 0b100 > 0 {
+                    let val = *self.decode_register(r1) as i8;
+                    self.temp_addr.offset(val);
+                }
                 
                 self.pc = self.temp_addr;
                 self.finish(pins);
@@ -95,6 +100,11 @@ impl CPU {
                 self.temp_addr.set_low_byte(pins.data);
                 self.temp_addr
                     .offset(self.instruction.metadata.offset() as i8);
+                let r1 = self.instruction.metadata.reg1();
+                if r1 & 0b100 > 0 {
+                    let val = *self.decode_register(r1) as i8;
+                    self.temp_addr.offset(val);
+                }
                 
                 pins.address = self.sp.into();
                 pins.data = self.flags.bits();
@@ -130,6 +140,7 @@ impl CPU {
     pub fn RTS(&mut self, pins: &mut Pins) {
         match self.cycle {
             1 => {
+                self.sp.decrement();
                 pins.address = self.sp.into();
                 pins.rw = Read;
             },
