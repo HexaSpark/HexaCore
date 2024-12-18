@@ -358,11 +358,11 @@ impl CPU {
         for device in &self.io_devices {
             let dev_unwrapped = device.lock().unwrap();
 
-            if dev_unwrapped.address() != address {
+            if dev_unwrapped.io_address() != address {
                 continue;
             }
 
-            return dev_unwrapped.read();
+            return dev_unwrapped.io_read();
         }
 
         DeviceResult::NoValidDevice
@@ -372,11 +372,11 @@ impl CPU {
         for device in &self.io_devices {
             let mut dev_unwrapped = device.lock().unwrap();
 
-            if dev_unwrapped.address() != address {
+            if dev_unwrapped.io_address() != address {
                 continue;
             }
 
-            return dev_unwrapped.write(data);
+            return dev_unwrapped.io_write(data);
         }
 
         DeviceResult::NoValidDevice

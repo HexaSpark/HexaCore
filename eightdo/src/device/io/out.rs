@@ -20,15 +20,15 @@ impl Out {
 }
 
 impl IOMappedDevice for Out {
-    fn address(&self) -> u8 {
+    fn io_address(&self) -> u8 {
         self.address
     }
 
-    fn read(&self) -> DeviceResult {
+    fn io_read(&self) -> DeviceResult {
         DeviceResult::WriteOnly
     }
 
-    fn write(&mut self, data: u8) -> DeviceResult {
+    fn io_write(&mut self, data: u8) -> DeviceResult {
         match self.mode {
             WaitingForMode => {
                 if data == 0 {
@@ -52,7 +52,7 @@ impl IOMappedDevice for Out {
         }
     }
 
-    fn name(&self) -> &str {
+    fn io_name(&self) -> &str {
         "Out"
     }
 }

@@ -29,8 +29,8 @@ pub trait AddressMappedDevice {
 }
 
 pub trait IOMappedDevice {
-    fn address(&self) -> u8;
-    fn read(&self) -> DeviceResult;
-    fn write(&mut self, data: u8) -> DeviceResult;
-    fn name(&self) -> &str;
+    fn io_address(&self) -> u8;
+    fn io_read(&self) -> DeviceResult;
+    fn io_write(&mut self, data: u8) -> DeviceResult;
+    fn io_name(&self) -> &str;
 }
