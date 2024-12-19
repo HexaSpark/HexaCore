@@ -10,7 +10,7 @@ impl CPU {
             2 => {
                 self.pc.increment();
                 pins.io_address = pins.data;
-                pins.io_rw = Write;
+                pins.io_rw = Read;
                 pins.io_enable = true;
             },
             3 => {
