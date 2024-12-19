@@ -1,7 +1,6 @@
 pub mod instructions;
 use std::{
-    fmt::Display,
-    sync::{Arc, Mutex},
+    cell::RefCell, fmt::Display, rc::Rc
 };
 
 use crate::device::{DeviceResult, IOMappedDevice};
@@ -10,8 +9,8 @@ use proc_bitfield::bitfield;
 
 use super::device::AddressMappedDevice;
 
-type AddressMappedDevices = Vec<Arc<Mutex<dyn AddressMappedDevice>>>;
-type IOMappedDevices = Vec<Arc<Mutex<dyn IOMappedDevice>>>;
+type AddressMappedDevices = Vec<Rc<RefCell<dyn AddressMappedDevice>>>;
+type IOMappedDevices = Vec<Rc<RefCell<dyn IOMappedDevice>>>;
 
 bitflags! {
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -301,11 +300,19 @@ impl CPU {
     }
 
     pub fn add_device<T: AddressMappedDevice + 'static>(&mut self, device: T) {
-        self.devices.push(Arc::new(Mutex::new(device)));
+        self.devices.push(Rc::new(RefCell::new(device)));
+    }
+
+    pub fn add_shared_device<T: AddressMappedDevice + 'static>(&mut self, device: Rc<RefCell<T>>) {
+        self.devices.push(device);
     }
 
     pub fn add_io_device<T: IOMappedDevice + 'static>(&mut self, device: T) {
-        self.io_devices.push(Arc::new(Mutex::new(device)));
+        self.io_devices.push(Rc::new(RefCell::new(device)));
+    }
+
+    pub fn add_shared_io_device<T: IOMappedDevice + 'static>(&mut self, device: Rc<RefCell<T>>) {
+        self.io_devices.push(device);
     }
 
     pub fn cycle(&mut self, pins: &mut Pins) {
@@ -328,7 +335,7 @@ impl CPU {
 
     pub fn read(&self, address: ExtendedAddress) -> DeviceResult {
         for device in &self.devices {
-            let res = device.lock().unwrap().read(address);
+            let res = device.borrow().read(address);
 
             if let DeviceResult::NotMyAddress = res {
                 continue;
@@ -342,7 +349,7 @@ impl CPU {
 
     pub fn write(&mut self, address: ExtendedAddress, data: u8) -> DeviceResult {
         for device in &self.devices {
-            let res = device.lock().unwrap().write(address, data);
+            let res = device.borrow_mut().write(address, data);
 
             if let DeviceResult::NotMyAddress = res {
                 continue;
@@ -356,7 +363,7 @@ impl CPU {
 
     pub fn read_io(&self, address: u8) -> DeviceResult {
         for device in &self.io_devices {
-            let dev_unwrapped = device.lock().unwrap();
+            let dev_unwrapped = device.borrow();
 
             if dev_unwrapped.io_address() != address {
                 continue;
@@ -370,7 +377,7 @@ impl CPU {
 
     pub fn write_io(&mut self, address: u8, data: u8) -> DeviceResult {
         for device in &self.io_devices {
-            let mut dev_unwrapped = device.lock().unwrap();
+            let mut dev_unwrapped = device.borrow_mut();
 
             if dev_unwrapped.io_address() != address {
                 continue;
