@@ -54,12 +54,29 @@ enum CPUState {
     Fetch,
     Execute,
     Halt,
+    Interrupt
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+enum InterruptStatus {
+    #[default]
+    None,
+    Normal,
+    NonMaskable
 }
 
 #[derive(Debug, Default)]
 struct Instruction {
     pub opcode: u8,
     pub metadata: CPUMetadata,
+}
+
+#[derive(Debug, Default)]
+pub struct IRQ {
+    pub req: bool,
+    pub nmi: bool,
+    pub ack: bool,
+    pub data: u8 // Limited to 4 bits
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -238,7 +255,8 @@ pub struct Pins {
     pub io_address: u8,
     pub io_data: u8,
     pub io_rw: ReadWrite,
-    pub io_enable: bool
+    pub io_enable: bool,
+    pub irq: IRQ,
 }
 
 #[derive(Debug, Default)]
@@ -282,6 +300,8 @@ pub struct CPU {
     io_devices: IOMappedDevices,
     instruction: Instruction,
     state: CPUState,
+    int_status: InterruptStatus,
+    int_num: u8,
     cycle: u8,
     // temp8: u8,
     temp16: u16,
@@ -316,10 +336,17 @@ impl CPU {
     }
 
     pub fn cycle(&mut self, pins: &mut Pins) {
+        if pins.irq.req && self.int_status == InterruptStatus::None {
+            self.int_status = InterruptStatus::Normal;
+        } else if pins.irq.nmi && self.int_status == InterruptStatus::None {
+            self.int_status = InterruptStatus::NonMaskable;
+        }
+
         match self.state {
             CPUState::Reset => self.reset_handler(pins),
             CPUState::Fetch => self.fetch_handler(pins),
             CPUState::Execute => self.execute_handler(pins),
+            CPUState::Interrupt => self.interrupt_handler(pins),
             CPUState::Halt => {
                 if self.options.exit_on_hlt() {
                     std::process::exit(0)
@@ -535,6 +562,117 @@ impl CPU {
             instructions::IN => self.IN(pins),
             instructions::OUT => self.OUT(pins),
             _ => panic!("Unknown opcode: {:#04x}", self.instruction.opcode),
+        }
+    }
+
+    fn interrupt_handler(&mut self, pins: &mut Pins) {
+        match self.int_status {
+            InterruptStatus::Normal => {
+                match self.cycle {
+                    1 => {
+                        pins.irq.ack = true;
+                    },
+                    2 => {
+                        pins.irq.ack = false;
+                        self.int_num = pins.irq.data;
+                        pins.address = ExtendedAddress::new_16bit_address((pins.irq.data * 3) as u16);
+                        pins.rw = ReadWrite::Read;
+                    },
+                    3 => {
+                        self.temp_addr.set_extended_value(pins.data);
+                        pins.address.increment();
+                        pins.rw = ReadWrite::Read;
+                    },
+                    4 => {
+                        self.temp_addr.set_hi_byte(pins.data);
+                        pins.address.increment();
+                        pins.rw = ReadWrite::Read;
+                    },
+                    5 => {
+                        self.temp_addr.set_low_byte(pins.data);
+                        pins.address = self.sp.into();
+                        pins.data = self.flags.bits();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    6 => {
+                        self.sp.increment();
+                        pins.address = self.sp.into();
+                        pins.data = self.pc.get_extended_value();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    7 => {
+                        self.sp.increment();
+                        pins.address = self.sp.into();
+                        pins.data = self.pc.get_hi_byte();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    8 => {
+                        self.sp.increment();
+                        pins.address = self.sp.into();
+                        pins.data = self.pc.get_low_byte();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    9 => {
+                        self.sp.increment();
+                        self.pc = self.temp_addr;
+                        self.finish(pins);
+                    },
+                    _ => panic!("Unknown normal interrupt cycle: {}", self.cycle)
+                }
+            },
+            InterruptStatus::NonMaskable => {
+                match self.cycle {
+                    1 => {
+                        pins.irq.ack = true;
+                    },
+                    2 => {
+                        pins.irq.ack = false;
+                        pins.address = ExtendedAddress::new_16bit_address(0x03);
+                        pins.rw = ReadWrite::Read;
+                    },
+                    3 => {
+                        self.temp_addr.set_extended_value(pins.data);
+                        pins.address.increment();
+                        pins.rw = ReadWrite::Read;
+                    },
+                    4 => {
+                        self.temp_addr.set_hi_byte(pins.data);
+                        pins.address.increment();
+                        pins.rw = ReadWrite::Read;
+                    },
+                    5 => {
+                        self.temp_addr.set_low_byte(pins.data);
+                        pins.address = self.sp.into();
+                        pins.data = self.flags.bits();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    6 => {
+                        self.sp.increment();
+                        pins.address = self.sp.into();
+                        pins.data = self.pc.get_extended_value();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    7 => {
+                        self.sp.increment();
+                        pins.address = self.sp.into();
+                        pins.data = self.pc.get_hi_byte();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    8 => {
+                        self.sp.increment();
+                        pins.address = self.sp.into();
+                        pins.data = self.pc.get_low_byte();
+                        pins.rw = ReadWrite::Write;
+                    },
+                    9 => {
+                        self.sp.increment();
+                        self.pc = self.temp_addr;
+                        self.finish(pins);
+                    },
+                    _ => panic!("Unknown non-maskable interrupt cycle: {}", self.cycle)
+                }
+            },
+            _ => panic!("Cannot handle interrupt with status {:?}", self.int_status)
         }
     }
 
