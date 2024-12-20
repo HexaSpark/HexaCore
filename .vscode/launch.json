@@ -66,6 +66,26 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}/eightdo"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'assembler'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=assembler",
+                    "--package=assembler",
+                    "--manifest-path",
+                    "assembler/Cargo.toml"
+                ],
+                "filter": {
+                    "name": "assembler",
+                    "kind": "bin"
+                }
+            },
+            "args": ["../gen/hello_world.8do"],
+            "cwd": "${workspaceFolder}/assembler"
         }
     ]
 }

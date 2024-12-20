@@ -1,9 +1,9 @@
 use std::{
     collections::HashMap,
+    env,
     fs::{self, File},
     io::Write,
     str::Chars,
-    env
 };
 
 #[derive(Clone)]
@@ -249,6 +249,7 @@ enum Token {
     Plus,
     Minus,
     Comma,
+    Variable(String),
 }
 
 impl Token {
@@ -384,15 +385,29 @@ impl<'a> LexerParser<'a> {
                 '-' => {
                     self.advance();
                     tokens.push(Token::Minus)
-                },
+                }
                 ';' => {
                     self.advance();
-                    
-                    while self.current_char != '\n' {
+
+                    while self.current_char != '\n' && self.current_char != '\0' {
                         self.advance();
                     }
 
                     self.advance();
+                }
+                '@' => {
+                    self.advance();
+                    let token = self.make_id_kwd_reg_inst();
+
+                    if let Token::Identifier(ident) = token {
+                        tokens.push(Token::Variable(ident));
+                        continue;
+                    }
+
+                    return (
+                        tokens,
+                        Some(format!("Expected Identifier, not '{}'", token.str_val())),
+                    );
                 }
                 _ => {
                     if self.current_char.is_ascii_alphanumeric() || self.current_char == '_' {
@@ -454,10 +469,7 @@ impl<'a> LexerParser<'a> {
         let mut string = String::new();
         let mut escaped = false;
 
-        let escape_reserved: HashMap<char, char> = HashMap::from([
-            ('n', '\n'),
-            ('t', '\t'),
-        ]);
+        let escape_reserved: HashMap<char, char> = HashMap::from([('n', '\n'), ('t', '\t')]);
 
         while self.current_char != '\0' {
             if escaped {
@@ -466,7 +478,7 @@ impl<'a> LexerParser<'a> {
                 } else {
                     string.push(self.current_char);
                 }
-                
+
                 escaped = false;
                 self.advance();
             }
@@ -494,6 +506,7 @@ struct Assembler {
     current_token: Token,
     address: usize,
     labels: HashMap<String, u32>,
+    variables: HashMap<String, (Option<u8>, Option<u32>)>,
 }
 
 impl Assembler {
@@ -504,6 +517,7 @@ impl Assembler {
             idx: 0,
             address: 0,
             labels: HashMap::new(),
+            variables: HashMap::new(),
         }
     }
 
@@ -605,10 +619,28 @@ impl Assembler {
                         }
 
                         panic!("Expected String, not '{:?}'", self.current_token);
+                    } else if directive == "var" {
+                        self.advance();
                     }
                 }
                 Token::Label(label) => {
                     self.labels.insert(label.clone(), self.address as u32);
+                    self.advance();
+                }
+                Token::Variable(var_name) => {
+                    let name = var_name.clone();
+                    self.advance();
+
+                    match self.current_token {
+                        Token::Int(num) => {
+                            self.variables.insert(name, (Some(num as u8), None));
+                        },
+                        Token::Address(addr) => {
+                            self.variables.insert(name, (None, Some(addr)));
+                        },
+                        _ => panic!("Variable can only be a Int or Address")
+                    }
+
                     self.advance();
                 }
                 Token::Instruction(instruction) => {
@@ -661,7 +693,10 @@ impl Assembler {
                                         data[self.address + 2].0 |= reg_num << 3;
                                         self.advance();
                                     } else {
-                                        panic!("Expected Int or Register, not {:?}", self.current_token);
+                                        panic!(
+                                            "Expected Int or Register, not {:?}",
+                                            self.current_token
+                                        );
                                     }
                                 } else {
                                     data[self.address + 1].0 = 0;
@@ -672,6 +707,56 @@ impl Assembler {
                                 data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
                                 data[self.address + 4].0 = (address & 0xFF) as u8;
                                 self.address += 5;
+                            }
+                            Token::Variable(var_name) => {
+                                let name = var_name.clone();
+                                if !self.variables.contains_key(&name) {
+                                    panic!("Variable {} does not exist.", var_name);
+                                }
+
+                                let var_info = self.variables[&name];
+
+                                if var_info.0.is_some() {
+                                    let opcode = *info.opcode.get("I").unwrap();
+
+                                    data[self.address].0 = opcode;
+                                    data[self.address + 1].0 = 0;
+                                    data[self.address + 2].0 = 0x00;
+                                    data[self.address + 3].0 = var_info.0.unwrap();
+                                    self.address += 4;
+                                    self.advance();
+                                } else {
+                                    let opcode = *info.opcode.get("A").unwrap();
+                                    let address = var_info.1.unwrap();
+                                    let ext = ((address & 0x30000) >> 10) as u8;
+                                    self.advance();
+    
+                                    if let Token::Plus = self.current_token {
+                                        self.advance();
+    
+                                        if let Token::Int(offset) = &self.current_token {
+                                            data[self.address + 1].0 = *offset as u8;
+                                            self.advance();
+                                        } else if let Token::Register(reg) = &self.current_token {
+                                            let reg_num = get_register(reg) | 0b100;
+                                            data[self.address + 2].0 |= reg_num << 3;
+                                            self.advance();
+                                        } else {
+                                            panic!(
+                                                "Expected Int or Register, not {:?}",
+                                                self.current_token
+                                            );
+                                        }
+                                    } else {
+                                        data[self.address + 1].0 = 0;
+                                    }
+    
+                                    data[self.address].0 = opcode;
+                                    data[self.address + 2].0 |= ext;
+                                    data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
+                                    data[self.address + 4].0 = (address & 0xFF) as u8;
+                                    self.address += 5;
+                                }
                             }
                             Token::Identifier(identifier) => {
                                 let ident = &identifier.clone();
@@ -693,15 +778,17 @@ impl Assembler {
                                         data[self.address + 2].0 |= reg_num << 3;
                                         self.advance();
                                     } else {
-                                        panic!("Expected Int or Register, not {:?}", self.current_token);
+                                        panic!(
+                                            "Expected Int or Register, not {:?}",
+                                            self.current_token
+                                        );
                                     }
                                 } else {
                                     data[self.address + 1].0 = 0;
                                 }
 
                                 if !self.labels.contains_key(ident) {
-                                    data[self.address + 3].1 =
-                                        TokenOption::Some(ident_tok);
+                                    data[self.address + 3].1 = TokenOption::Some(ident_tok);
                                     data[self.address + 4].1 = TokenOption::Prev;
 
                                     self.address += 5;
@@ -764,7 +851,7 @@ impl Assembler {
 
                                     if let Token::Plus = self.current_token {
                                         self.advance();
-    
+
                                         if let Token::Int(offset) = self.current_token {
                                             data[self.address + 1].0 = offset as u8;
                                             self.advance();
@@ -773,7 +860,10 @@ impl Assembler {
                                             data[self.address + 2].0 |= reg_num << 3;
                                             self.advance();
                                         } else {
-                                            panic!("Expected Int or Register, not {:?}", self.current_token);
+                                            panic!(
+                                                "Expected Int or Register, not {:?}",
+                                                self.current_token
+                                            );
                                         }
                                     } else {
                                         data[self.address + 1].0 = 0;
@@ -784,6 +874,56 @@ impl Assembler {
                                     data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
                                     data[self.address + 4].0 = (address & 0xFF) as u8;
                                     self.address += 5;
+                                }
+                                Token::Variable(var_name) => {
+                                    let name = var_name.clone();
+                                    if !self.variables.contains_key(&name) {
+                                        panic!("Variable {} does not exist.", var_name);
+                                    }
+
+                                    let var_info = self.variables[&name];
+
+                                    if var_info.0.is_some() {
+                                        let opcode = *info.opcode.get("RI").unwrap();
+
+                                        data[self.address].0 = opcode;
+                                        data[self.address + 1].0 = 0;
+                                        data[self.address + 2].0 = dest_reg;
+                                        data[self.address + 3].0 = var_info.0.unwrap();
+                                        self.address += 4;
+                                        self.advance();
+                                    } else {
+                                        let opcode = *info.opcode.get("RA").unwrap();
+                                        let address = var_info.1.unwrap();
+                                        let ext = ((address & 0x30000) >> 10) as u8;
+                                        self.advance();
+    
+                                        if let Token::Plus = self.current_token {
+                                            self.advance();
+    
+                                            if let Token::Int(offset) = self.current_token {
+                                                data[self.address + 1].0 = offset as u8;
+                                                self.advance();
+                                            } else if let Token::Register(reg) = &self.current_token {
+                                                let reg_num = get_register(reg) | 0b100;
+                                                data[self.address + 2].0 |= reg_num << 3;
+                                                self.advance();
+                                            } else {
+                                                panic!(
+                                                    "Expected Int or Register, not {:?}",
+                                                    self.current_token
+                                                );
+                                            }
+                                        } else {
+                                            data[self.address + 1].0 = 0;
+                                        }
+    
+                                        data[self.address].0 = opcode;
+                                        data[self.address + 2].0 = dest_reg | ext;
+                                        data[self.address + 3].0 = ((address & 0xFF00) >> 8) as u8;
+                                        data[self.address + 4].0 = (address & 0xFF) as u8;
+                                        self.address += 5;
+                                    }
                                 }
                                 Token::Identifier(identifier) => {
                                     let ident = &identifier.clone();
@@ -796,7 +936,7 @@ impl Assembler {
 
                                     if let Token::Plus = self.current_token {
                                         self.advance();
-    
+
                                         if let Token::Int(offset) = self.current_token {
                                             data[self.address + 1].0 = offset as u8;
                                             self.advance();
@@ -805,15 +945,17 @@ impl Assembler {
                                             data[self.address + 2].0 |= reg_num << 3;
                                             self.advance();
                                         } else {
-                                            panic!("Expected Int or Register, not {:?}", self.current_token);
+                                            panic!(
+                                                "Expected Int or Register, not {:?}",
+                                                self.current_token
+                                            );
                                         }
                                     } else {
                                         data[self.address + 1].0 = 0;
                                     }
 
                                     if !self.labels.contains_key(ident) {
-                                        data[self.address + 3].1 =
-                                            TokenOption::Some(ident_tok);
+                                        data[self.address + 3].1 = TokenOption::Some(ident_tok);
                                         data[self.address + 4].1 = TokenOption::Prev;
 
                                         self.address += 5;
@@ -833,7 +975,7 @@ impl Assembler {
                         _ => panic!("Invalid instruction size"),
                     }
                 }
-                _ => panic!("Unknown Token to Assemble: {:?}", self.current_token),
+                _ => panic!("Unknown Token to Assemble: {:?} at index {}", self.current_token,self.idx),
             }
         }
 

@@ -14,7 +14,7 @@
             "label": "rust: cargo run assembler",
             "type": "shell",
             "command": "cargo",
-            "args": ["run", "--manifest-path", "assembler/Cargo.toml"],
+            "args": ["run", "--manifest-path", "assembler/Cargo.toml", "--", "gen/hello_world.8do"],
             "group": {
                 "kind": "build",
             }
