@@ -47,7 +47,7 @@ enum AddressingMode {
     Absolute,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 enum CPUState {
     #[default]
     Reset,
@@ -573,6 +573,7 @@ impl CPU {
                         pins.irq.ack = true;
                     },
                     2 => {
+                        pins.bus_enable = true;
                         pins.irq.ack = false;
                         self.int_num = pins.irq.data;
                         pins.address = ExtendedAddress::new_16bit_address((pins.irq.data * 3) as u16);
@@ -615,6 +616,7 @@ impl CPU {
                     9 => {
                         self.sp.increment();
                         self.pc = self.temp_addr;
+                        self.int_status = InterruptStatus::None;
                         self.finish(pins);
                     },
                     _ => panic!("Unknown normal interrupt cycle: {}", self.cycle)
@@ -679,6 +681,15 @@ impl CPU {
     fn finish(&mut self, pins: &mut Pins) {
         self.cycle = 0;
         pins.bus_enable = false;
+
+        if self.int_status != InterruptStatus::None {
+            self.state = CPUState::Interrupt;
+            return;
+        }
+
+        if self.state == CPUState::Halt {
+            return;
+        }
 
         self.state = CPUState::Fetch;
     }

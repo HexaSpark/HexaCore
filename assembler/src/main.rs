@@ -399,15 +399,16 @@ impl<'a> LexerParser<'a> {
                     self.advance();
                     let token = self.make_id_kwd_reg_inst();
 
-                    if let Token::Identifier(ident) = token {
-                        tokens.push(Token::Variable(ident));
-                        continue;
+                    match token {
+                        Token::Identifier(ident) | Token::Instruction(ident) => {
+                            tokens.push(Token::Variable(ident));
+                            continue;
+                        },
+                        _ => return (
+                            tokens,
+                            Some(format!("Expected Identifier, not '{:?}'", token)),
+                        )
                     }
-
-                    return (
-                        tokens,
-                        Some(format!("Expected Identifier, not '{}'", token.str_val())),
-                    );
                 }
                 _ => {
                     if self.current_char.is_ascii_alphanumeric() || self.current_char == '_' {
