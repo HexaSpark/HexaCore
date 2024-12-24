@@ -18,7 +18,7 @@ impl RAM {
 }
 
 impl AddressMappedDevice for RAM {
-    fn read(&self, address: ExtendedAddress) -> DeviceResult {
+    fn read(&mut self, address: ExtendedAddress) -> DeviceResult {
         let address_from: u32 = u32::from(address);
 
         if address_from >= u32::from(self.start) && address_from <= u32::from(self.end) {

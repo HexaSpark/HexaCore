@@ -362,7 +362,7 @@ impl CPU {
 
     pub fn read(&self, address: ExtendedAddress) -> DeviceResult {
         for device in &self.devices {
-            let res = device.borrow().read(address);
+            let res = device.borrow_mut().read(address);
 
             if let DeviceResult::NotMyAddress = res {
                 continue;
@@ -390,7 +390,7 @@ impl CPU {
 
     pub fn read_io(&self, address: u8) -> DeviceResult {
         for device in &self.io_devices {
-            let dev_unwrapped = device.borrow();
+            let mut dev_unwrapped = device.borrow_mut();
 
             if dev_unwrapped.io_address() != address {
                 continue;

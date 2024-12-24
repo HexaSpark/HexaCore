@@ -24,7 +24,7 @@ impl IOMappedDevice for Out {
         self.address
     }
 
-    fn io_read(&self) -> DeviceResult {
+    fn io_read(&mut self) -> DeviceResult {
         DeviceResult::WriteOnly
     }
 
