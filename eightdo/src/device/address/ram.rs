@@ -12,7 +12,7 @@ impl RAM {
         Self {
             start,
             end,
-            data: vec![0; (u32::from(end) - u32::from(start)) as usize],
+            data: vec![0; (u32::from(end) - u32::from(start) + 1) as usize],
         }
     }
 }
@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_ram_out_of_range_read() {
-        let ram = RAM::new(
+        let mut ram = RAM::new(
             ExtendedAddress::new_16bit_address(0x0000),
             ExtendedAddress::new_16bit_address(0x7FFF),
         );

@@ -11,7 +11,7 @@ pub struct ROM {
 
 impl ROM {
     pub fn new(start: ExtendedAddress, end: ExtendedAddress, mut data: Vec<u8>) -> Self {
-        let size = u32::from(end) - u32::from(start);
+        let size = u32::from(end) - u32::from(start) + 1;
 
         if data.len() != size as usize {
             data.resize(size as usize, 0);
@@ -21,7 +21,7 @@ impl ROM {
     }
 
     pub fn new_from_file(start: ExtendedAddress, end: ExtendedAddress, file: String) -> Self {
-        let size = u32::from(end) - u32::from(start);
+        let size = u32::from(end) - u32::from(start) + 1;
         let mut data: Vec<u8> = vec![];
         let mut file_o = std::fs::File::open(file).unwrap();
         let bytes_read = file_o.read_to_end(&mut data).unwrap();
