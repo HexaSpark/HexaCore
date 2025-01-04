@@ -10,8 +10,6 @@ mod hlt;
 mod inc;
 mod mov;
 mod or;
-mod pop;
-mod psh;
 mod st;
 mod sub;
 mod xor;
@@ -19,10 +17,11 @@ mod sbl;
 mod sbr;
 mod rol;
 mod ror;
+mod rti;
+mod stack;  
 mod flags;
 mod jumps;
 mod io;
-mod rti;
 
 mod consts {
     pub const MOVI: u8 = gen_opcode("MOVI");

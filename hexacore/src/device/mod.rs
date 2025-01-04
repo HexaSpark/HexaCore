@@ -9,7 +9,9 @@ pub use io::out::Out;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DeviceResult {
-    Ok(u8),
+    Ok,
+    Ok8(u8),
+    Ok16(u16),
     NotMyAddress,
     ReadOnly,
     WriteOnly,

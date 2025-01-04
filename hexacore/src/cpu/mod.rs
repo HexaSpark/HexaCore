@@ -14,7 +14,7 @@ type IOMappedDevices = Vec<Rc<RefCell<dyn IOMappedDevice>>>;
 
 bitflags! {
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-    pub struct Flag: u8 {
+    pub struct Flag: u16 {
         const Z = 0b0000_0001; // Zero
         const N = 0b0000_0010; // Negative
         const C = 0b0000_0100; // Carry
@@ -156,13 +156,13 @@ impl ExtendedAddress {
 
     pub fn new_split_18bit_address(address: u16, extended: u8) -> Self {
         Self {
-            value: (address as u32) | ((extended & 0x3) as u32) << 16,
+            value: (address as u32) | ((extended & 0xF) as u32) << 16,
         }
     }
 
     pub fn new_18bit_address(address: u32) -> Self {
         Self {
-            value: address & 0x3FFFF,
+            value: address & 0xFFFFF,
         }
     }
 
@@ -175,7 +175,7 @@ impl ExtendedAddress {
     }
 
     fn set_low_byte(&mut self, byte: u8) {
-        self.value &= 0x3FF00;
+        self.value &= 0xFFF00;
         self.value |= byte as u32
     }
 
@@ -184,26 +184,26 @@ impl ExtendedAddress {
     }
 
     fn set_hi_byte(&mut self, byte: u8) {
-        self.value &= 0x300FF;
+        self.value &= 0xF00FF;
         self.value |= (byte as u32) << 8
     }
 
     fn set_18bit_value(&mut self, address: u32) {
-        self.value = address & 0x3FFFF
+        self.value = address & 0xFFFFF
     }
 
     fn get_extended_value(&self) -> u8 {
-        ((self.value & 0x30000) >> 16) as u8
+        ((self.value & 0xF0000) >> 16) as u8
     }
 
     fn set_extended_value(&mut self, extended: u8) {
         self.value &= 0xFFFF;
-        self.value |= ((extended & 0x3) as u32) << 16
+        self.value |= ((extended & 0xF) as u32) << 16
     }
 
     fn increment(&mut self) {
         self.value += 1;
-        self.value &= 0x3FFFF;
+        self.value &= 0xFFFFF;
     }
 
     fn offset(&mut self, offset: i8) {
@@ -249,7 +249,7 @@ pub enum ReadWrite {
 #[derive(Debug, Default)]
 pub struct Pins {
     pub address: ExtendedAddress,
-    pub data: u8,
+    pub data: u16,
     pub rw: ReadWrite,
     pub bus_enable: bool,
     pub io_address: u8,
@@ -289,10 +289,10 @@ impl EmuOptions {
 
 #[derive(Default)]
 pub struct CPU {
-    pub ra: u8,
-    pub rb: u8,
-    pub rc: u8,
-    pub rd: u8,
+    pub ra: u16,
+    pub rb: u16,
+    pub rc: u16,
+    pub rd: u16,
     flags: Flag,
     pc: ExtendedAddress,
     sp: StackAddress,
@@ -448,7 +448,7 @@ impl CPU {
                 pins.rw = ReadWrite::Read;
             }
             2 => {
-                self.temp_addr.set_extended_value(pins.data);
+                self.temp_addr.set_extended_value(pins.data as u8);
 
                 pins.address.set_16bit_value(0x0001);
                 pins.rw = ReadWrite::Read;
