@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eightdo = { path = "../eightdo" }
+eightdo = { path = "../hexacore" }
 strum = { version = "0.26", features = ["derive"] }
