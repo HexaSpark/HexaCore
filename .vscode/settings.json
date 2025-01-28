@@ -16,6 +16,7 @@
         "INCI",
         "insts",
         "MOVA",
+        "MOVB",
         "MOVI",
         "POPR",
         "PSHI",

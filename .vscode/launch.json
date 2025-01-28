@@ -1,91 +1,61 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'eightdo'",
+            "name": "Debug unit tests in library 'HexaCore'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=eightdo",
-                    "--manifest-path",
-                    "eightdo/Cargo.toml"
+                    "--package=HexaCore"
                 ],
                 "filter": {
-                    "name": "eightdo",
+                    "name": "HexaCore",
                     "kind": "lib"
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}/eightdo"
+            "cwd": "${workspaceFolder}"
         },
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'eightdo'",
+            "name": "Debug executable 'HexaCore'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=eightdo",
-                    "--package=eightdo",
-                    "--manifest-path",
-                    "eightdo/Cargo.toml"
+                    "--bin=HexaCore",
+                    "--package=HexaCore"
                 ],
                 "filter": {
-                    "name": "eightdo",
+                    "name": "HexaCore",
                     "kind": "bin"
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}/eightdo"
+            "cwd": "${workspaceFolder}"
         },
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'eightdo'",
+            "name": "Debug unit tests in executable 'HexaCore'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=eightdo",
-                    "--package=eightdo",
-                    "--manifest-path",
-                    "eightdo/Cargo.toml"
+                    "--bin=HexaCore",
+                    "--package=HexaCore"
                 ],
                 "filter": {
-                    "name": "eightdo",
+                    "name": "HexaCore",
                     "kind": "bin"
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}/eightdo"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'assembler'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=assembler",
-                    "--package=assembler",
-                    "--manifest-path",
-                    "assembler/Cargo.toml"
-                ],
-                "filter": {
-                    "name": "assembler",
-                    "kind": "bin"
-                }
-            },
-            "args": ["../gen/hello_world.8do"],
-            "cwd": "${workspaceFolder}/assembler"
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
