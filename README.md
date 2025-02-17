@@ -1,3 +1,5 @@
+***THIS README WAS FOR THE 8-BIT VERSION. DEVELOPMENT IS NOW SWITCHED TO 16 BITS.***
+
 # 8do
 
 8do in Rust. Idk why but I didn't like my C++ implementation.
