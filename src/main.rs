@@ -18,11 +18,11 @@ fn main() {
 
     let rom = ROM::new_from_file(
         ExtendedAddress::new_16bit_address(0x00_0000),
-        ExtendedAddress::new_16bit_address(0x00_FFFF),
+        ExtendedAddress::new_ext_address(0x7F_FFFF),
         ("gen/test.bin").into(), // TODO: Change back to &args[0] to return back to normal
     );
     let ram = RAM::new(
-        ExtendedAddress::new_ext_address(0x01_0000),
+        ExtendedAddress::new_ext_address(0x80_0000),
         ExtendedAddress::new_ext_address(0xFF_FFFF),
     );
 
